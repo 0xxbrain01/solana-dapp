@@ -1,4 +1,4 @@
-use anchor_lang::{accounts::account, prelude::*, solana_program::clock};
+use anchor_lang::{prelude::*, solana_program::clock};
 use std::{collections::HashMap, iter::Map};
 
 declare_id!("5nrPYHucWFU2kbaVtzDyuRDmny4McbNwxDTqQSYrFV9s");
@@ -7,18 +7,19 @@ declare_id!("5nrPYHucWFU2kbaVtzDyuRDmny4McbNwxDTqQSYrFV9s");
 pub mod solana_dapp {
     use super::*;
 
-    // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-    //     // init value
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        // init value
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     ///////////////////////////
     ////// SYSTEM ACTION //////
     ///////////////////////////
-    // pub fn create_token(ctx: Context<Token>) -> Result<()> {
-    //     Ok(())
-    // }
+    pub fn create_token(ctx: Context<TokenStore>) -> Result<()> {
+        let new_token = ctx.accounts.token.create_token(1000);
+        Ok(())
+    }
 }
 
 pub const WEI6: u64 = 1_000_000;
@@ -42,7 +43,8 @@ pub const STATUS_TOKEN_ACTIVE: u64 = 1;
 pub const STATUS_TOKEN_INACTIVE: u64 = 2;
 pub const STATUS_TOKEN_SETTLE: u64 = 3;
 
-#[derive(Debug, Clone)]
+#[account]
+#[derive(Default)]
 pub struct Token {
     token: Pubkey,
     settleTime: i64,
@@ -92,7 +94,8 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[account]
+#[derive(Default)]
 pub struct Offer {
     offerType: u64,
     tokenId: u64,
@@ -112,7 +115,8 @@ impl Offer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[account]
+#[derive(Default)]
 pub struct Order {
     offerId: u64,
     amount: u128,
@@ -126,7 +130,9 @@ impl Order {
         Ok(())
     }
 }
-#[derive(Debug, Clone)]
+
+#[account]
+#[derive(Default)]
 pub struct Config {
     pledgeRate: u64,
     feeRefund: u64,
@@ -139,10 +145,11 @@ impl Config {
     }
 }
 
-#[derive(Debug, Clone)]
+#[account]
+#[derive(Default)]
 pub struct PreMarket {
     acceptedTokens: HashMap<Pubkey, bool>,
-    tokens: Token,
+    tokens: HashMap<u64, Token>,
     offers: HashMap<u64, Offer>,
     lastOfferId: u64,
     orders: HashMap<u64, Order>,
@@ -169,7 +176,7 @@ impl PreMarket {
         config: Config,
     ) -> Result<()> {
         self.acceptedTokens.insert(owner, true);
-        self.tokens = token;
+        self.tokens.insert(1, token);
         self.offers.insert(self.lastOfferId + 1, offer);
         self.lastOfferId = self.lastOfferId + 1;
 
@@ -200,6 +207,11 @@ impl PreMarket {
 pub struct Initialize<'info> {
     #[account(mut)]
     pub player: Signer<'info>,
-    // #[account(int, bump)]
+    // #[account(mut)]
     // pub preMarket: Account<'info, PreMarket>,
+}
+#[derive(Accounts)]
+pub struct TokenStore<'info> {
+    #[account(mut)]
+    pub token: Account<'info, Token>,
 }
